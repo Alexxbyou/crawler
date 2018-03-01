@@ -42,16 +42,19 @@ get.singer.list<-function(addr,hot=F){
 #
 read_html_loop<-function(addr){
   do<-1
-  while(do<5&(!exists("web"))){
+  web.ext<-F
+  while(do<5&(!web.ext)){
     tryCatch({
       web<-read_html(addr)
+      web.ext<-!web.ext
     }, error=function(e){
       Sys.sleep(1)
+      web.ext<-!web.ext
       print(paste(addr,"redo",do,"times..."))
     })
     do<-do+1
   }
-  if(exists("web")){
+  if(web.ext){
     return(web)
   }else{
     print(paste(addr,"redo",do,"GIVE UP..."))
@@ -91,7 +94,7 @@ get.singer.info<-function(addr){
       alias<-nt2alias(name.trunk)
       work<-nt2work(name.trunk)
       bio<-web[ind][2]%>%cleanFun
-      df=data.frame(
+      df<-data.frame(
         Name=name,
         Alias=alias,
         Album=work[1],
@@ -163,7 +166,7 @@ get.album.info<-function(row,singer){
 
 get.singer.album<-function(addr){
   raw<-read_html_loop(addr)
-  if(!is.null){
+  if(!is.null(raw)){
     web<-raw%>%html_nodes("dl dd")
     ind<-grep("hb",web%>%html_attr("class"))
     web<-web[ind]
