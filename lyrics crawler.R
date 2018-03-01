@@ -29,11 +29,11 @@ for(cat.n in 1:4){
   df.temp$MainCat<-cat.lkup$MainCategory[cat.n]
   df.temp<-df.temp[,c(4,1:3)]
   Singer.master.list<-unique(rbind(Singer.master.list,df.temp))
-  print(cat("\n\n\n\n\n\n\n"))
+  cat("\n\n\n\n\n\n\n")
 }
 
 #dir.create("data")
-saveRDS(Singer.master.list,"data/Singer.master.list-20180228.RDS")
+#saveRDS(Singer.master.list,"data/Singer.master.list-20180228.RDS")
 
 
 Singer.master.list.sub<-unique(Singer.master.list[,1:3])
@@ -54,11 +54,12 @@ for(s in 1:n_singer){
 }
 
 # 
-
-singer.album<-c()
+Singer.master.list<-Singer.master.list[Singer.master.list$Hot,]
+n_singer<-nrow(Singer.master.list)
+hot.singer.album<-c()
 for(sa in 1:n_singer){
   temp<-get.singer.album(Singer.master.list$Addr[sa])
-  singer.album<-rbind(singer.album,temp)
+  hot.singer.album<-rbind(hot.singer.album,temp)
   print(sa+1)
 }
 

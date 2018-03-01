@@ -41,18 +41,22 @@ get.singer.list<-function(addr,hot=F){
 
 #
 read_html_loop<-function(addr){
-  do=T
-  while(do){
+  do<-1
+  while(do<5&(!exists("web"))){
     tryCatch({
       web<-read_html(addr)
-      do<-!do
     }, error=function(e){
       Sys.sleep(1)
-      do<-!do
-      print(paste(addr,"redo..."))
+      print(paste(addr,"redo",do,"times..."))
     })
+    do<-do+1
   }
-  return(web)
+  if(exists("web")){
+    return(web)
+  }else{
+    print(paste(addr,"redo",do,"GIVE UP..."))
+    return(NULL)
+  }
 }
 
 # Function
@@ -68,22 +72,36 @@ addr.tail.replace<-function(addr,repl){
 
 
 get.singer.info<-function(addr){
-  web<-read_html_loop(addr)%>%html_nodes("dl dd")
-  ind<-grep("hb",web%>%html_attr("class"))
-  name.trunk<-web[ind][1]%>%cleanFun
-  name<-nt2name(name.trunk)
-  alias<-nt2alias(name.trunk)
-  work<-nt2work(name.trunk)
-  bio<-web[ind][2]%>%cleanFun
+  raw<-read_html_loop(addr)
   df=data.frame(
-    Name=name,
-    Alias=alias,
-    Album=work[1],
-    Song=work[2],
-    Bio=bio,
+    Name=addr,
+    Alias="",
+    Album="",
+    Song="",
+    Bio="",
     stringsAsFactors = F
   )
-  print(paste(addr,name,"done!"))
+  if(!is.null(raw)){
+    web<-html_nodes(raw,"dl dd")
+    ind<-grep("hb",web%>%html_attr("class"))
+    name.trunk<-web[ind][1]%>%cleanFun
+    name<-nt2name(name.trunk)
+    void.test<-gsub("\\s+","",name)
+    if(nchar(void.test)!=0){
+      alias<-nt2alias(name.trunk)
+      work<-nt2work(name.trunk)
+      bio<-web[ind][2]%>%cleanFun
+      df=data.frame(
+        Name=name,
+        Alias=alias,
+        Album=work[1],
+        Song=work[2],
+        Bio=bio,
+        stringsAsFactors = F
+      )
+      print(paste(addr,name,"done!"))
+    }
+  }
   return(df)
 }
 
@@ -144,21 +162,27 @@ get.album.info<-function(row,singer){
 
 
 get.singer.album<-function(addr){
-  web<-read_html_loop(addr)%>%html_nodes("dl dd")
-  ind<-grep("hb",web%>%html_attr("class"))
-  web<-web[ind]
-  singer<-web[1]%>%cleanFun%>%nt2name
-  alb.ind<-grep("歌词",web)
-  if(!is.null(alb.ind)){
-    web<-web[alb.ind]
+  raw<-read_html_loop(addr)
+  if(!is.null){
+    web<-raw%>%html_nodes("dl dd")
+    ind<-grep("hb",web%>%html_attr("class"))
+    web<-web[ind]
+    singer<-web[1]%>%cleanFun%>%nt2name
+    alb.ind<-grep("歌词",web)
+    if(!is.null(alb.ind)){
+      web<-web[alb.ind]
+      album.df<-c()
+      for(alb in 1:length(web)){
+        temp<-get.album.info(web[alb],singer)
+        album.df<-rbind(album.df,temp)
+      }
+      paste(paste(rep("-",70),collapse=""),"\n",addr,singer,"done!\n\n\n")%>%cat
+      return(album.df)
+    }
+  }else{
+    paste(paste(rep("-",70),collapse=""),"\n",addr,singer,"empty!\n\n\n")%>%cat
+    return(NULL)
   }
-  album.df<-c()
-  for(alb in 1:length(web)){
-    temp<-get.album.info(web[alb],singer)
-    album.df<-rbind(album.df,temp)
-  }
-  paste(paste(rep("-",70),collapse=""),"\n",addr,singer,"done!\n\n\n")%>%cat
-  return(album.df)
 }
 
 
